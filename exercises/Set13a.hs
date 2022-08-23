@@ -45,19 +45,21 @@ readNames s =
 -- (NB! There are obviously other corner cases like the inputs " " and
 -- "a b c", but you don't need to worry about those here)
 split :: String -> Maybe (String,String)
-split = todo
+split s =
+  let array = words s
+  in if (length array == 1) then Nothing else Just (array !! 0, array !! 1) 
 
 -- checkNumber should take a pair of two strings and return them
 -- unchanged if they don't contain numbers. Otherwise Nothing is
 -- returned.
 checkNumber :: (String, String) -> Maybe (String, String)
-checkNumber = todo
+checkNumber (x,y) = if (any isDigit x || any isDigit y) then Nothing else Just (x,y)
 
 -- checkCapitals should take a pair of two strings and return them
 -- unchanged if both start with a capital letter. Otherwise Nothing is
 -- returned.
 checkCapitals :: (String, String) -> Maybe (String, String)
-checkCapitals (for,sur) = todo
+checkCapitals (for,sur) = if ((isUpper $ for !! 0) && (isUpper $ sur !! 0)) then Just (for,sur) else Nothing
 
 ------------------------------------------------------------------------------
 -- Ex 2: Given a list of players and their scores (as [(String,Int)]),
@@ -83,8 +85,24 @@ checkCapitals (for,sur) = todo
 --   winner [("a",1),("b",1)] "a" "b"
 --     ==> Just "a"
 
+getScore :: String -> [(String,Int)] -> Maybe Int
+getScore name scores = 
+  let arr = map snd (filter (\(k,v) -> k == name) scores)
+  in if length arr > 0 then Just (sum arr) else Nothing
+
+higher :: (String, Maybe Int) -> (String, Maybe Int) -> Maybe String
+higher (k1, Nothing) _ = Nothing
+higher _ (k2, Nothing) = Nothing
+higher (k1, Just v1) (k2, Just v2)
+  | v1 > v2 = Just k1
+  | v2 > v1 = Just k2
+  | otherwise = Just k1
+
 winner :: [(String,Int)] -> String -> String -> Maybe String
-winner scores player1 player2 = todo
+winner scores player1 player2 =
+  let first = getScore player1 scores
+      second = getScore player2 scores
+  in (higher (player1,first) (player2,second))
 
 ------------------------------------------------------------------------------
 -- Ex 3: given a list of indices and a list of values, return the sum
@@ -101,8 +119,22 @@ winner scores player1 player2 = todo
 --  selectSum [0..10] [4,6,9,20]
 --    Nothing
 
+safeHead :: [a] -> Maybe a
+safeHead [] = Nothing
+safeHead (x:xs) = Just x
+
+safeTail :: [a] -> Maybe [a]
+safeTail [] = Nothing
+safeTail (x:xs) = Just xs
+
+safeIndex :: [a] -> Int -> Maybe a
+safeIndex xs 0 = safeHead xs
+safeIndex xs n = do t <- safeTail xs
+                    safeIndex t (n-1)
+
 selectSum :: Num a => [a] -> [Int] -> Maybe a
-selectSum xs is = todo
+selectSum xs is = fmap sum $ sequence $ map (\i -> safeIndex xs i) is
+
 
 ------------------------------------------------------------------------------
 -- Ex 4: Here is the Logger monad from the course material. Implement
@@ -121,6 +153,9 @@ data Logger a = Logger [String] a
 msg :: String -> Logger ()
 msg s = Logger [s] ()
 
+annotate :: String -> a -> Logger a
+annotate s x = msg s >> return x -- a value and a message
+
 instance Functor Logger where
   fmap f (Logger l a) = Logger l (f a)
 
@@ -135,8 +170,23 @@ instance Applicative Logger where
   pure = return
   (<*>) = ap
 
+countAndLogTest p [] c = return c
+countAndLogTest p (x:xs) c
+  | p x = msg (show x)
+          >>
+          countAndLogTest p xs (c+1)
+          >>= return
+  | otherwise = countAndLogTest p xs c
+
+countAndLog' p [] c = return c
+countAndLog' p (x:xs) c
+  | p x = do msg (show x)
+             x <- countAndLog' p xs (c+1)
+             return x
+  | otherwise = countAndLog' p xs c
+
 countAndLog :: Show a => (a -> Bool) -> [a] -> Logger Int
-countAndLog = todo
+countAndLog p xs = countAndLog' p xs 0
 
 ------------------------------------------------------------------------------
 -- Ex 5: You can find the Bank and BankOp code from the course
@@ -153,7 +203,7 @@ exampleBank :: Bank
 exampleBank = (Bank (Map.fromList [("harry",10),("cedric",7),("ginny",1)]))
 
 balance :: String -> BankOp Int
-balance accountName = todo
+balance accountName = BankOp (\(Bank accounts) -> (Map.findWithDefault 0 accountName accounts, (Bank accounts)))
 
 ------------------------------------------------------------------------------
 -- Ex 6: Using the operations balance, withdrawOp and depositOp, and
@@ -171,7 +221,17 @@ balance accountName = todo
 --     ==> ((),Bank (fromList [("cedric",7),("ginny",1),("harry",10)]))
 
 rob :: String -> String -> BankOp ()
-rob from to = todo
+rob from to = do
+  balance from
+  +>
+  withdrawOp from
+  +>
+  depositOp to
+
+
+
+-- `BankOp a` is an operation that transforms a Bank value, while returning a value of type `a`
+-- data BankOp a = BankOp (Bank -> (a,Bank))
 
 ------------------------------------------------------------------------------
 -- Ex 7: using the State monad, write the operation `update` that first

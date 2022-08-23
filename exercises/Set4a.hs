@@ -35,7 +35,10 @@ import Data.Array
 -- you remove the Eq a => constraint from the type!
 
 allEqual :: Eq a => [a] -> Bool
-allEqual xs = todo
+isEqualToNext first (x:xs) = if first == x then True else False
+allEqual [] = True
+allEqual (x:[]) = True
+allEqual (x:xs) = if isEqualToNext x xs then allEqual xs else False
 
 ------------------------------------------------------------------------------
 -- Ex 2: implement the function distinct which returns True if all
@@ -50,7 +53,9 @@ allEqual xs = todo
 --   distinct [1,2] ==> True
 
 distinct :: Eq a => [a] -> Bool
-distinct = todo
+distinct [] = True
+distinct (x:[]) = True
+distinct xs = if nub xs == xs then True else False
 
 ------------------------------------------------------------------------------
 -- Ex 3: implement the function middle that returns the middle value
@@ -63,7 +68,8 @@ distinct = todo
 --   middle 'b' 'a' 'c'  ==> 'b'
 --   middle 1 7 3        ==> 3
 
-middle = todo
+middle :: Ord a => a -> a -> a -> a
+middle x y z = sort [x,y,z] !! 1
 
 ------------------------------------------------------------------------------
 -- Ex 4: return the range of an input list, that is, the difference
@@ -78,8 +84,8 @@ middle = todo
 --   rangeOf [4,2,1,3]          ==> 3
 --   rangeOf [1.5,1.0,1.1,1.2]  ==> 0.5
 
-rangeOf :: [a] -> a
-rangeOf = todo
+rangeOf :: (Num a, Ord a) => [a] -> a
+rangeOf xs = (foldr1 max xs) - (foldr1 min xs)
 
 ------------------------------------------------------------------------------
 -- Ex 5: given a (non-empty) list of (non-empty) lists, return the longest
@@ -97,7 +103,10 @@ rangeOf = todo
 --   longest [[1,2,3],[4,5],[6]] ==> [1,2,3]
 --   longest ["bcd","def","ab"] ==> "bcd"
 
-longest = todo
+smallestFirstElement (x:xs) (y:ys) = if x < y then (x:xs) else (y:ys)
+longer xs ys = if length xs < length ys then ys else if length xs == length ys then smallestFirstElement xs ys else xs
+longest :: (Ord a) => [[a]] -> [a]
+longest xs = foldr longer [] xs
 
 ------------------------------------------------------------------------------
 -- Ex 6: Implement the function incrementKey, that takes a list of
@@ -113,8 +122,8 @@ longest = todo
 --   incrementKey True [(True,1),(False,3),(True,4)] ==> [(True,2),(False,3),(True,5)]
 --   incrementKey 'a' [('a',3.4)] ==> [('a',4.4)]
 
-incrementKey :: k -> [(k,v)] -> [(k,v)]
-incrementKey = todo
+incrementKey :: (Num v, Eq k) => k -> [(k,v)] -> [(k,v)]
+incrementKey k xs = map (\x -> if fst x == k then (fst x,snd x + 1) else (x)) xs
 
 ------------------------------------------------------------------------------
 -- Ex 7: compute the average of a list of values of the Fractional
@@ -128,8 +137,8 @@ incrementKey = todo
 -- Hint! you can use the function fromIntegral to convert the list
 -- length to a Fractional
 
-average :: Fractional a => [a] -> a
-average xs = todo
+average :: Fractional a => [a] -> a 
+average xs = (sum xs) / (fromIntegral (length xs))
 
 ------------------------------------------------------------------------------
 -- Ex 8: given a map from player name to score and two players, return
@@ -148,7 +157,7 @@ average xs = todo
 --     ==> "Lisa"
 
 winner :: Map.Map String Int -> String -> String -> String
-winner scores player1 player2 = todo
+winner scores player1 player2 = if (Map.findWithDefault 0 player1 scores) >= (Map.findWithDefault 0 player2 scores) then player1 else player2
 
 ------------------------------------------------------------------------------
 -- Ex 9: compute how many times each value in the list occurs. Return
@@ -163,7 +172,9 @@ winner scores player1 player2 = todo
 --     ==> Map.fromList [(False,3),(True,1)]
 
 freqs :: (Eq a, Ord a) => [a] -> Map.Map a Int
-freqs xs = todo
+freqs' :: (Eq a, Ord a) => a -> Map.Map a Int -> Map.Map a Int
+freqs' k m = if Map.lookup k m == Nothing then Map.insert k 1 m else Map.adjust (\x -> x + 1) k m
+freqs xs = foldr freqs' Map.empty xs
 
 ------------------------------------------------------------------------------
 -- Ex 10: recall the withdraw example from the course material. Write a
@@ -190,8 +201,23 @@ freqs xs = todo
 --   transfer "Lisa" "Mike" 20 bank
 --     ==> fromList [("Bob",100),("Mike",50)]
 
+withdraw :: String -> Int -> Map.Map String Int -> Map.Map String Int
+withdraw account amount bank = Map.adjust (\x -> x-amount) account bank
+
+deposit :: String -> Int -> Map.Map String Int -> Map.Map String Int
+deposit account amount bank = Map.adjust (\x -> x+amount) account bank
+
+accountsExist :: String -> String -> Map.Map String Int -> Bool
+accountsExist from to bank = Map.member from bank && Map.member to bank
+
+senderHasEnoughMoney' :: Maybe Int -> Int -> Bool
+senderHasEnoughMoney' Nothing a = False
+senderHasEnoughMoney' (Just from) amount = from >= amount
+senderHasEnoughMoney :: String -> Int -> Map.Map String Int -> Bool
+senderHasEnoughMoney from amount bank = senderHasEnoughMoney' (Map.lookup from bank) amount
+
 transfer :: String -> String -> Int -> Map.Map String Int -> Map.Map String Int
-transfer from to amount bank = todo
+transfer from to amount bank = if accountsExist from to bank && senderHasEnoughMoney from amount bank && amount > 0 then deposit to amount (withdraw from amount bank) else bank
 
 ------------------------------------------------------------------------------
 -- Ex 11: given an Array and two indices, swap the elements in the indices.

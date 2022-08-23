@@ -13,7 +13,10 @@ data Country = Finland | Switzerland | Norway
   deriving Show
 
 instance Eq Country where
-  (==) = todo
+  Finland == Finland = True
+  Switzerland == Switzerland = True
+  Norway == Norway = True
+  _ == _ = False
 
 ------------------------------------------------------------------------------
 -- Ex 2: implement an Ord instance for Country so that
@@ -22,10 +25,13 @@ instance Eq Country where
 -- Remember minimal complete definitions!
 
 instance Ord Country where
-  compare = todo -- implement me?
-  (<=) = todo -- and me?
-  min = todo -- and me?
-  max = todo -- and me?
+--  compare = todo
+  Finland <= _ = True
+  Norway <= Norway = True
+  Norway <= Switzerland = True
+  Switzerland <= Switzerland = True
+  _ <= _ = False
+--  max = todo -- and me?
 
 ------------------------------------------------------------------------------
 -- Ex 3: Implement an Eq instance for the type Name which contains a String.
@@ -41,7 +47,7 @@ data Name = Name String
   deriving Show
 
 instance Eq Name where
-  (==) = todo
+  Name a == Name b = map (\x -> toLower x) a == map (\x -> toLower x) b
 
 ------------------------------------------------------------------------------
 -- Ex 4: here is a list type parameterized over the type it contains.
@@ -55,7 +61,9 @@ data List a = Empty | LNode a (List a)
   deriving Show
 
 instance Eq a => Eq (List a) where
-  (==) = todo
+  Empty == Empty = True
+  (LNode a xs) == (LNode b ys) = a==b && xs==ys
+  _ == _ = False
 
 ------------------------------------------------------------------------------
 -- Ex 5: below you'll find two datatypes, Egg and Milk. Implement a
@@ -70,10 +78,20 @@ instance Eq a => Eq (List a) where
 -- Example:
 --   price ChickenEgg  ==>  20
 
+class Price a where
+  price :: a -> Int
+
 data Egg = ChickenEgg | ChocolateEgg
   deriving Show
 data Milk = Milk Int -- amount in litres
   deriving Show
+
+instance Price Egg where
+  price ChickenEgg = 20
+  price ChocolateEgg = 30
+
+instance Price Milk where
+  price (Milk x) = 15*x
 
 
 ------------------------------------------------------------------------------
@@ -84,7 +102,13 @@ data Milk = Milk Int -- amount in litres
 -- price [Just ChocolateEgg, Nothing, Just ChickenEgg]  ==> 50
 -- price [Nothing, Nothing, Just (Milk 1), Just (Milk 2)]  ==> 45
 
+instance Price a => Price (Maybe a) where
+  price (Just a) = price a
+  price Nothing = 0
 
+instance Price a => Price [a] where
+  price [] = 0
+  price xs = sum (map (\x -> price x) xs)
 ------------------------------------------------------------------------------
 -- Ex 7: below you'll find the datatype Number, which is either an
 -- Integer, or a special value Infinite.
@@ -93,8 +117,7 @@ data Milk = Milk Int -- amount in litres
 -- and Infinite is greater than any other value.
 
 data Number = Finite Integer | Infinite
-  deriving (Show,Eq)
-
+  deriving (Show,Eq,Ord)
 
 ------------------------------------------------------------------------------
 -- Ex 8: rational numbers have a numerator and a denominator that are

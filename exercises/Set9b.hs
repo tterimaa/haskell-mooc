@@ -47,10 +47,10 @@ type Col   = Int
 type Coord = (Row, Col)
 
 nextRow :: Coord -> Coord
-nextRow (i,j) = todo
+nextRow (i,j) = (i+1,1)
 
 nextCol :: Coord -> Coord
-nextCol (i,j) = todo
+nextCol (i,j) = (i,j+1)
 
 --------------------------------------------------------------------------------
 -- Ex 2: Implement the function prettyPrint that, given the size of
@@ -99,8 +99,17 @@ nextCol (i,j) = todo
 -- of the width (or height) n of the chess board; the naïve solution with elem
 -- takes O(n^3) time. Just ignore the previous sentence, if you're not familiar
 -- with the O-notation.)
-prettyPrint :: Size -> [Coord] -> String
-prettyPrint = todo
+
+
+getAll s = [(x,y) | x <- [1..s], y <- [1..s]]
+
+replaceQueens [] qcs = []
+replaceQueens (c:cs) qcs = if elem c qcs then (0,0) : replaceQueens cs qcs else c : replaceQueens cs qcs
+
+queensToZeros :: Size -> [Coord] -> [(Size, Size)]
+queensToZeros s coords = replaceQueens (getAll s) coords
+
+
 
 --------------------------------------------------------------------------------
 -- Ex 3: The task in this exercise is to define the relations sameRow, sameCol,
