@@ -40,7 +40,9 @@ test = do
   return (x<10)
 
 ifM :: Monad m => m Bool -> m a -> m a -> m a
-ifM opBool opThen opElse = todo
+ifM opBool opThen opElse = do
+  bool <- opBool
+  if bool then opThen else opElse
 
 ------------------------------------------------------------------------------
 -- Ex 2: the standard library function Control.Monad.mapM defines a
@@ -81,8 +83,15 @@ perhapsIncrement :: Bool -> Int -> State Int ()
 perhapsIncrement True x = modify (+x)
 perhapsIncrement False _ = return ()
 
+getArr _ [] = []
+getArr [] _ = []
+getArr (x:xs) (y:ys) = (x,y) : getArr xs ys
+
+
 mapM2 :: Monad m => (a -> b -> m c) -> [a] -> [b] -> m [c]
-mapM2 op xs ys = todo
+mapM2 op xs ys = do
+  let arr = getArr xs ys
+  mapM (\(a,b) -> op a b) arr
 
 ------------------------------------------------------------------------------
 -- Ex 3: Finding paths.
@@ -184,7 +193,12 @@ findSum2 ks ns = todo
 --     ==> [7,3,5,1,6,2,4,0]
 
 allSums :: [Int] -> [Int]
-allSums xs = todo
+allSums [] = [0]
+allSums (x:xs) = do
+  z <- [x,0]
+  y <- allSums xs
+  return (z + y)
+
 
 ------------------------------------------------------------------------------
 -- Ex 6: the standard library defines the function

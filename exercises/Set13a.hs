@@ -221,7 +221,7 @@ balance accountName = BankOp (\(Bank accounts) -> (Map.findWithDefault 0 account
 --     ==> ((),Bank (fromList [("cedric",7),("ginny",1),("harry",10)]))
 
 rob :: String -> String -> BankOp ()
-rob from to = do
+rob from to =
   balance from
   +>
   withdrawOp from
@@ -241,9 +241,13 @@ rob from to = do
 -- Example:
 --  runState update 3
 --    ==> ((),7)
+                
 
 update :: State Int ()
-update = todo
+update = do old <- get
+            put (old*2)
+            old2 <- get
+            put (old2+1)
 
 ------------------------------------------------------------------------------
 -- Ex 8: Checking that parentheses are balanced with the State monad.
@@ -271,7 +275,10 @@ update = todo
 --   parensMatch "(()))("      ==> False
 
 paren :: Char -> State Int ()
-paren = todo
+paren '(' = do old <- get
+               if (old < 0) then put (-1) else put (old+1)
+paren ')' = do old <- get
+               if (old < 0) then put (-1) else put (old-1)
 
 parensMatch :: String -> Bool
 parensMatch s = count == 0
@@ -301,8 +308,15 @@ parensMatch s = count == 0
 --
 -- PS. The order of the list of pairs doesn't matter
 
+f :: Eq a => a -> Maybe Int -> [(a,Int)] -> [(a,Int)]
+f a Nothing xs = (a,1):xs
+f a (Just b) xs = ((a,b+1) : delete (a,b) xs)
+
 count :: Eq a => a -> State [(a,Int)] ()
-count x = todo
+count x = do ys <- get
+             modify (f x (lookup x ys))
+             
+
 
 ------------------------------------------------------------------------------
 -- Ex 10: Implement the operation occurrences, which
@@ -323,5 +337,11 @@ count x = todo
 --  runState (occurrences [4,7]) [(2,1),(3,1)]
 --    ==> (4,[(2,1),(3,1),(4,1),(7,1)])
 
+-- modifyFunc :: [(a,Int)] -> [(a,Int)]
+
 occurrences :: (Eq a) => [a] -> State [(a,Int)] Int
-occurrences xs = todo
+occurrences [] = return 1
+occurrences (x:xs) = do
+  val <- get
+  return 1
+
